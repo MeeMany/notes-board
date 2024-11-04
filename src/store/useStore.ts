@@ -1,31 +1,27 @@
 // src/store/useStore.ts
-import create from 'zustand';
+import { create } from 'zustand';
 import { nanoid } from 'nanoid';
-import { Note, Position } from '../components/Board/types';
 
-interface BoardState {
-  notes: Note[];
-  addTextNote: (position: Position, content: string) => void;
-  updateNote: (id: string, note: Note) => void;
-  deleteNote: (id: string) => void;
-}
-
-export const useStore = create<BoardState>((set) => ({
+export const useStore = create((set) => ({
   notes: [],
   
   addTextNote: (position, content) => set((state) => ({
-    notes: [...state.notes, {
-      id: nanoid(),
-      type: 'text',
-      position,
-      content,
-      zIndex: state.notes.length + 1
-    }]
+    notes: [
+      ...state.notes,
+      {
+        id: nanoid(),
+        type: 'text',
+        content,
+        position,
+        width: 200,
+        zIndex: state.notes.length + 1
+      }
+    ]
   })),
 
-  updateNote: (id, updatedNote) => set((state) => ({
-    notes: state.notes.map(note => 
-      note.id === id ? { ...note, ...updatedNote } : note
+  updateNote: (id, updates) => set((state) => ({
+    notes: state.notes.map(note =>
+      note.id === id ? { ...note, ...updates } : note
     )
   })),
 

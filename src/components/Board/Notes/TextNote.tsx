@@ -1,5 +1,5 @@
 // src/components/Board/Notes/TextNote.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import Draggable from 'react-draggable';
 import { TextNote as TextNoteType } from '../types';
 import { useStore } from '../../../store/useStore';
@@ -9,8 +9,7 @@ interface TextNoteProps {
 }
 
 export const TextNote: React.FC<TextNoteProps> = ({ note }) => {
-  console.log('Rendering TextNote:', note); // Debug log
-  
+  const [isEditing, setIsEditing] = useState(false);
   const updateNote = useStore(state => state.updateNote);
   const deleteNote = useStore(state => state.deleteNote);
 
@@ -18,27 +17,35 @@ export const TextNote: React.FC<TextNoteProps> = ({ note }) => {
     <Draggable
       position={note.position}
       onStop={(e, data) => {
-        console.log('Drag stopped:', { x: data.x, y: data.y }); // Debug log
         updateNote(note.id, {
           ...note,
           position: { x: data.x, y: data.y }
         });
       }}
     >
-      <div 
-        className="absolute bg-yellow-100 rounded shadow-md p-2"
-        style={{ minWidth: '200px', zIndex: note.zIndex }}
-      >
-        <div className="flex justify-between items-center mb-2">
-          <div className="cursor-move">✥</div>
-          <button 
-            onClick={() => deleteNote(note.id)}
-            className="text-red-500 hover:text-red-700"
-          >
-            ×
-          </button>
+      <div className="absolute bg-yellow-100 rounded shadow-md" style={{ zIndex: note.zIndex }}>
+        <div className="flex justify-between items-center p-2 bg-yellow-200 cursor-move">
+          <span>Note</span>
+          <button onClick={() => deleteNote(note.id)} className="text-red-500">×</button>
         </div>
-        <div className="p-2">{note.content}</div>
+        {isEditing ? (
+          <textarea
+            autoFocus
+            value={note.content}
+            onChange={(e) => {
+              updateNote(note.id, {
+                ...note,
+                content: e.target.value
+              });
+            }}
+            onBlur={() => setIsEditing(false)}
+            className="p-2 w-full min-w-[200px] resize-none bg-transparent outline-none"
+          />
+        ) : (
+          <div onDoubleClick={() => setIsEditing(true)} className="p-2 min-w-[200px]">
+            {note.content}
+          </div>
+        )}
       </div>
     </Draggable>
   );

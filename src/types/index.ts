@@ -1,4 +1,5 @@
 // src/types/index.ts
+
 export interface Position {
   x: number;
   y: number;
@@ -37,3 +38,19 @@ export interface ShapeNote extends BaseNote {
 
 export type Note = TextNote | ImageNote | ShapeNote;
 export type Tool = 'select' | 'text' | 'draw' | 'shape';
+
+export interface StoreState {
+  notes: Note[];
+  addTextNote: (position: Position, content: string) => void;
+  addImageNote: (position: Position, url: string, dimensions: Dimensions) => void;
+  updateNote: (id: string, note: Partial<Note>) => void;
+  deleteNote: (id: string) => void;
+}
+
+export interface DrawingState {
+  isDrawing: boolean;
+  currentTool: Tool;
+  currentColor: string;
+  currentSize: number;
+  currentShape: string | null;
+}

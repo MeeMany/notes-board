@@ -1,68 +1,136 @@
-// src/components/Board/index.tsx
-import React, { useState, useEffect } from 'react';
-import { Notes } from './Notes';
-import { useStore } from '../../store/useStore';
+// src/components/Board/Notes/index.tsx
+import React, { memo, useState } from 'react';
+import Draggable from 'react-draggable';
+import { useStore } from '../../../store/useStore';
+import { Note as NoteType } from '../../../types';
 
-export const Board: React.FC = () => {
-  const addTextNote = useStore(state => state.addTextNote);
-  const notes = useStore(state => state.notes); // Ajout pour debug
-  const [isWriting, setIsWriting] = useState(false);
-  const [text, setText] = useState('');
-  const [position, setPosition] = useState<{ x: number, y: number } | null>(null);
+const Note: React.FC<{ note: NoteType }> = memo(({ note }) => {
+  const updateNote = useStore(state => state.updateNote);
+  const deleteNote = useStore(state => state.deleteNote);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState((note as any).content);
 
-  // Log pour debug
-  useEffect(() => {
-    console.log('Current notes:', notes);
-  }, [notes]);
+  if (note.type !== 'text') return null;
 
   const handleDoubleClick = (e: React.MouseEvent) => {
-    console.log('Double click detected at:', e.clientX, e.clientY);
-    if (!isWriting) {
-      setPosition({ x: e.clientX, y: e.clientY });
-      setIsWriting(true);
+    // Ne pas déclencher l'édition si on double-clique sur le bouton de fermeture
+    if (!(e.target as HTMLElement).closest('button')) {
+      setIsEditing(true);
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    console.log('Key pressed:', e.key);
-    if (e.key === 'Enter' && text.trim() !== '') {
-      if (position) {
-        console.log('Adding note:', { position, text });
-        addTextNote(position, text);
-      }
-      setText('');
-      setIsWriting(false);
-      setPosition(null);
+  const handleEdit = (e: React.FocusEvent<HTMLTextAreaElement>) => {
+    const newContent = e.target.value.trim();
+    if (newContent) {
+      updateNote(note.id, {
+        ...note,
+        content: newContent
+      });
     }
+    setIsEditing(false);
   };
 
   return (
-    <div 
-      className="h-screen w-full bg-white" 
-      onDoubleClick={handleDoubleClick}
-      style={{ cursor: isWriting ? 'text' : 'default' }}
+    <Draggable
+      defaultPosition={note.position}
+      onStop={(_e, data) => {
+        updateNote(note.id, {
+          ...note,
+          position: { x: data.x, y: data.y }
+        });
+      }}
+      handle=".drag-handle"
+      bounds="parent"
     >
-      {isWriting && position && (
-        <textarea
-          autoFocus
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={handleKeyDown}
+      <div 
+        className="note absolute" 
+        style={{ 
+          zIndex: note.zIndex,
+          width: (note as any).width || 200,
+          minWidth: '200px',
+        }}
+      >
+        <div
+          className="bg-yellow-100 rounded shadow-lg"
           style={{
-            position: 'absolute',
-            left: position.x,
-            top: position.y,
-            zIndex: 1000,
-            background: 'yellow',
-            border: '1px solid black',
-            padding: '5px',
-            minWidth: '200px',
+            width: '100%',
+            height: '100%',
             minHeight: '100px',
-            resize: 'none'
+            resize: 'both',
+            overflow: 'visible',
           }}
-        />
-      )}
-      <Notes />
-    </div>
+          onMouseUp={(e) => {
+            const element = e.currentTarget;
+            updateNote(note.id, {
+              ...note,
+              width: element.offsetWidth,
+              height: element.offsetHeight
+            });
+          }}
+        >
+          {/* En-tête de la note */}
+          <div className="drag-handle bg-yellow-200 px-3 py-1 cursor-move flex justify-between items-center">
+            <div className="text-gray-500">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M3 8V6h18v2H3zm0 5h18v-2H3v2zm0 5h18v-2H3v2z"/>
+              </svg>
+            </div>
+            <button
+              onClick={() => deleteNote(note.id)}
+              className="text-gray-500 hover:text-red-500 font-bold"
+            >
+              ×
+            </button>
+          </div>
+
+          {/* Contenu de la note */}
+          <div
+            className="p-3 w-full h-full"
+            onDoubleClick={handleDoubleClick}
+          >
+            {isEditing ? (
+              <textarea
+                autoFocus
+                className="w-full h-full min-h-[80px] bg-yellow-50 p-1 focus:outline-none resize-none"
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                onBlur={handleEdit}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && e.shiftKey) {
+                    e.preventDefault();
+                    handleEdit(e as any);
+                  }
+                }}
+              />
+            ) : (
+              <div className="whitespace-pre-wrap">
+                {(note as any).content}
+              </div>
+            )}
+          </div>
+
+          {/* Indicateur de redimensionnement */}
+          <div 
+            className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize"
+            style={{
+              background: `linear-gradient(135deg, transparent 50%, rgba(0,0,0,0.1) 50%)`
+            }}
+          />
+        </div>
+      </div>
+    </Draggable>
   );
-};
+});
+
+const Notes: React.FC = memo(() => {
+  const notes = useStore(state => state.notes);
+  return (
+    <>
+      {notes.map(note => (
+        <Note key={note.id} note={note} />
+      ))}
+    </>
+  );
+});
+
+export default Notes;

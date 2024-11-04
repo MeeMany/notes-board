@@ -1,22 +1,26 @@
 /* src/components/Board/Notes/TextNote.css */
 .note {
-    position: absolute;
-    background: yellow;
-    border: 1px solid black;
-    padding: 5px;
-    resize: none;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    border-radius: 4px;
-  }
-  
-  .note-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    cursor: move;
-  }
-  
-  .note-content {
-    padding: 5px;
-    white-space: pre-wrap;
-  }
+  position: absolute;
+  background-color: #fff3cd;
+  border: 1px solid #ffeeba;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  min-width: 200px;
+  padding: 8px;
+}
+
+.note-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px;
+  background-color: #fff9e6;
+  border-bottom: 1px solid #ffeeba;
+  cursor: move;
+}
+
+.note-content {
+  padding: 8px;
+  min-height: 50px;
+  white-space: pre-wrap;
+}

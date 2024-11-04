@@ -1,64 +1,77 @@
-
+// src/context/AuthContext.tsx
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { 
-  User,
+  getAuth, 
+  onAuthStateChanged, 
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged,
-  sendEmailVerification
+  signOut as firebaseSignOut,
+  sendPasswordResetEmail,
+  User 
 } from 'firebase/auth';
-import { auth } from '../config/firebase';
+import { app } from '../config/firebase';
 
 interface AuthContextType {
   currentUser: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<void>;
+  signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType>({} as AuthContextType);
-
-export const useAuth = () => useContext(AuthContext);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const auth = getAuth(app);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, user => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       setLoading(false);
     });
 
     return unsubscribe;
-  }, []);
+  }, [auth]);
 
-  const login = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string) => {
     await signInWithEmailAndPassword(auth, email, password);
   };
 
-  const register = async (email: string, password: string) => {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    await sendEmailVerification(userCredential.user);
+  const signUp = async (email: string, password: string) => {
+    await createUserWithEmailAndPassword(auth, email, password);
   };
 
-  const logout = async () => {
-    await signOut(auth);
+  const signOut = async () => {
+    await firebaseSignOut(auth);
   };
 
-  const value = {
-    currentUser,
-    loading,
-    login,
-    register,
-    logout
+  const resetPassword = async (email: string) => {
+    await sendPasswordResetEmail(auth, email);
   };
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider 
+      value={{ 
+        currentUser, 
+        loading, 
+        signIn, 
+        signUp, 
+        signOut, 
+        resetPassword 
+      }}
+    >
       {!loading && children}
     </AuthContext.Provider>
   );
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };

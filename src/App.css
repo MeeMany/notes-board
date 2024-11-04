@@ -40,3 +40,46 @@
 .read-the-docs {
   color: #888;
 }
+/* Styles de base pour les notes */
+.note {
+  position: absolute !important;
+}
+
+.note > div {
+  position: relative;
+  transition: box-shadow 0.2s ease;
+}
+
+.note:hover > div {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Style du coin de redimensionnement */
+.note > div::after {
+  content: "";
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 12px;
+  height: 12px;
+  cursor: se-resize;
+  background: linear-gradient(135deg, transparent 50%, rgba(0,0,0,0.1) 50%);
+}
+
+/* Style pour la zone d'édition */
+.note textarea {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+}
+
+/* Style pour la barre de titre */
+.drag-handle {
+  user-select: none;
+}
+
+/* Support du redimensionnement */
+[style*="resize: both"] {
+  resize: both !important;
+  overflow: hidden !important;
+}

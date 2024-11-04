@@ -1,55 +1,78 @@
 // src/components/Board/index.tsx
-import React, { useState } from 'react';
-import { Notes } from './Notes';
+import React, { useState, useCallback } from 'react';
 import { useStore } from '../../store/useStore';
+import Notes from './Notes';
 
 export const Board: React.FC = () => {
-  const addTextNote = useStore(state => state.addTextNote);
   const [isWriting, setIsWriting] = useState(false);
   const [text, setText] = useState('');
-  const [position, setPosition] = useState<{ x: number, y: number } | null>(null);
+  const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
+  const addTextNote = useStore(state => state.addTextNote);
 
-  const handleDoubleClick = (e: React.MouseEvent) => {
-    if (!isWriting) {
-      setPosition({ x: e.clientX, y: e.clientY });
-      setIsWriting(true);
+  const handleDoubleClick = useCallback((e: React.MouseEvent) => {
+    // Ignore double clicks on existing notes
+    if ((e.target as HTMLElement).closest('.note') || 
+        (e.target as HTMLElement).closest('textarea')) {
+      return;
     }
-  };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && text.trim() !== '') {
-      if (position) {
-        addTextNote(position, text);
-      }
+    const rect = e.currentTarget.getBoundingClientRect();
+    setPosition({ 
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    });
+    setIsWriting(true);
+  }, []);
+
+  const handleSubmit = useCallback(() => {
+    if (text.trim() && position) {
+      addTextNote(position, text.trim());
       setText('');
       setIsWriting(false);
       setPosition(null);
     }
-  };
+  }, [text, position, addTextNote]);
 
   return (
-    <div className="h-screen flex flex-col" onDoubleClick={handleDoubleClick}>
-      <div className="flex-1 relative bg-white overflow-hidden">
-        {isWriting && (
+    <div 
+      className="h-screen w-full relative bg-white"
+      onDoubleClick={handleDoubleClick}
+      style={{ cursor: 'text' }}
+    >
+      <Notes />
+      
+      {isWriting && position && (
+        <div
+          className="absolute"
+          style={{
+            left: position.x,
+            top: position.y,
+            zIndex: 9999,
+          }}
+          onClick={e => e.stopPropagation()}
+        >
           <textarea
             autoFocus
             value={text}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={handleKeyDown}
+            onChange={e => setText(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSubmit();
+              }
+            }}
+            onBlur={handleSubmit}
+            className="bg-yellow-100 p-3 rounded shadow-lg focus:outline-none"
             style={{
-              position: 'absolute',
-              left: position?.x,
-              top: position?.y,
-              zIndex: 1000,
-              background: 'yellow',
-              border: '1px solid black',
-              padding: '5px',
+              minWidth: '200px',
+              minHeight: '100px',
               resize: 'none'
             }}
           />
-        )}
-        <Notes />
-      </div>
+        </div>
+      )}
     </div>
   );
 };
+
+export default Board;
